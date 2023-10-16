@@ -83,6 +83,18 @@ export default function Home() {
     router.push("/sign-in");
   };
 
+  const handleDeleteProduct = async (codigo: string) => {
+    await api.delete("/product", {
+      params: {
+        codigo,
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    handleGetProducts();
+  };
+
   return (
     <>
       <ToastContainer />
@@ -250,8 +262,9 @@ export default function Home() {
               <td className="px-6 py-4 whitespace-no-wrap">
                 <span className="px-2 inline-flex text-xs leading-5">
                   <button
-                    type="submit"
+                    type="button"
                     className="flex-none rounded-md bg-red-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+                    onClick={() => handleDeleteProduct(item.codigo)}
                   >
                     Excluir
                   </button>
