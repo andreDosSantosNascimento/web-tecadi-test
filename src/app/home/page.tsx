@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Fragment } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { api } from "@/utils/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 interface Produto {
   codigo: string;
   codigoCliente: string;
@@ -20,8 +22,45 @@ interface Produto {
 
 export default function Home() {
   const router = useRouter();
+  const [offset, setOffset] = useState<number>(0);
+  const [limit, setlimit] = useState<number>(50);
+  const [codigo, setCodigo] = useState<string>("");
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [token, setToken] = useState<String>(localStorage.getItem("token") || "");
+
+  const handleGetProducts = () => {
+    api
+      .get("product", { headers: { Authorization: `Bearer ${token}` }, params: { offset, limit, codigo } })
+      .then(({ data }) => {
+        setProdutos(data.list);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Erro ao buscar produtos");
+      });
+  };
+  const validationSchema = yup.object().shape({
+    offset: yup.number().required("Offset é obrigatório"),
+    limit: yup.number().required("Limite é obrigatório"),
+    codigo: yup.string(),
+  });
+
+  const { handleSubmit, register } = useForm({
+    resolver: yupResolver(validationSchema),
+  });
+
+  const handleOnSubmit = async ({ codigo = "", offset, limit }: { codigo?: string | undefined; offset: number; limit: number }) => {
+    try {
+      setCodigo(codigo);
+      setOffset(offset);
+      setlimit(limit);
+    } catch (error) {
+      toast.error("Erro ao Buscar produtos");
+    }
+  };
+  useEffect(() => {
+    handleGetProducts();
+  }, [codigo, offset, limit]);
 
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
@@ -33,15 +72,7 @@ export default function Home() {
 
   useEffect(() => {
     if (token) {
-      api
-        .get("product", { headers: { Authorization: `Bearer ${token}` }, params: { offset: 0, limit: 50, codigo: null } })
-        .then(({ data }) => {
-          setProdutos(data.list);
-        })
-        .catch((error) => {
-          console.log(error);
-          toast.error("Erro ao buscar produtos");
-        });
+      handleGetProducts();
     }
   }, [token]);
 
@@ -63,17 +94,56 @@ export default function Home() {
                 <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
                   <Disclosure.Button className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
                     <span className="absolute -inset-0.5" />
-                    <span className="sr-only">Open main menu</span>
                     {open ? <XMarkIcon className="block h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="block h-6 w-6" aria-hidden="true" />}
                   </Disclosure.Button>
                 </div>
-                <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start"></div>
+                <div className="flex content-center items-center">
+                  <button
+                    type="button"
+                    className="flex-none rounded-md me-2 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                  >
+                    Novo produto
+                  </button>
+                  <form className="flex" action="#" method="POST" onSubmit={handleSubmit(handleOnSubmit)}>
+                    <input
+                      id="codigo-produto"
+                      type="text"
+                      autoComplete="codigo-produto"
+                      className="flex w-1/4 me-2 h-10 rounded-md border-0 bg-white/5 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6"
+                      placeholder="Código do produto"
+                      {...register("codigo")}
+                    />
+                    <input
+                      id="offset"
+                      type="number"
+                      autoComplete="offset"
+                      required
+                      className="flex w-2/12 me-2 h-10 rounded-md border-0 bg-white/5 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6"
+                      placeholder="Offset"
+                      {...register("offset")}
+                    />
+                    <input
+                      id="limit"
+                      type="number"
+                      autoComplete="limit"
+                      required
+                      className="flex w-2/12 me-2 h-10 rounded-md border-0 bg-white/5 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6"
+                      placeholder="Limite"
+                      {...register("limit")}
+                    />
+                    <button
+                      type="submit"
+                      className="flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                    >
+                      Procurar
+                    </button>
+                  </form>
+                </div>
+
                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                   <Menu as="div" className="relative ml-3">
                     <div>
                       <Menu.Button className="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
-                        <span className="absolute -inset-1.5" />
-                        <span className="sr-only">Open user menu</span>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
