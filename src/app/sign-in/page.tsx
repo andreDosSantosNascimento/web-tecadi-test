@@ -21,7 +21,7 @@ export default function SignIn() {
     const token = localStorage.getItem("token");
 
     if (token) {
-      router.push("/");
+      router.push("/home");
     }
   }, [router]);
 
@@ -49,7 +49,7 @@ export default function SignIn() {
         if (response.status === 200) {
           localStorage.setItem("token", response.data.refresh_token);
           toast.success("Logado com sucesso!");
-          router.push("/");
+          router.push("/home");
           return;
         }
 
