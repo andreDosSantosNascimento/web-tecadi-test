@@ -101,6 +101,7 @@ export default function Home() {
                   <button
                     type="button"
                     className="flex-none rounded-md me-2 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                    onClick={() => router.push("/new-product")}
                   >
                     Novo produto
                   </button>
@@ -208,6 +209,8 @@ export default function Home() {
             <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Peso bruto</th>
             <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Peso líquido</th>
             <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Unidade de medida</th>
+            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Editar</th>
+            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Excluir</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -233,6 +236,26 @@ export default function Home() {
               </td>
               <td className="px-6 py-4 whitespace-no-wrap">
                 <span className="px-2 inline-flex text-xs leading-5">{item.um}</span>
+              </td>
+              <td className="px-6 py-4 whitespace-no-wrap">
+                <span className="px-2 inline-flex text-xs leading-5">
+                  <button
+                    type="submit"
+                    className="flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                  >
+                    Editar
+                  </button>
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-no-wrap">
+                <span className="px-2 inline-flex text-xs leading-5">
+                  <button
+                    type="submit"
+                    className="flex-none rounded-md bg-red-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+                  >
+                    Excluir
+                  </button>
+                </span>
               </td>
             </tr>
           ))}
