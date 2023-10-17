@@ -1,52 +1,95 @@
 "use client";
-import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { Disclosure, Listbox, Menu, Transition } from "@headlessui/react";
+import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Product, ProductSaveData } from "@/app/types/product";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { Fragment, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useProducts } from "@/app/hooks/product";
+import { useLoading } from "@/app/hooks/loading";
 import { useRouter } from "next/navigation";
-import { useRouter as usePath } from "next/router";
-import { Fragment, useState } from "react";
+import { useAuth } from "@/app/hooks/auth";
+import { AxiosRequestConfig } from "axios";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import * as yup from "yup";
-import { useAuth } from "@/app/hooks/auth";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import { AxiosRequestConfig } from "axios";
-import { ProductSaveData } from "@/app/types/product";
-import { useProducts } from "@/app/hooks/product";
 
-export default function ProductSave({ codigo }: { codigo: string }) {
+export default function ProductSave() {
+  const { handleSaveProduct, handleGetProduct } = useProducts();
   const router = useRouter();
+  const path = useSearchParams();
+  const { token, logout } = useAuth();
+  const { loading } = useLoading();
 
+  const [codigo, setCodigo] = useState(path.get("codigo"));
   const grupos = ["SPRI", "RITR", "MINE", "SOVE", "SUMI"];
   const ums = ["UN", "KG", "AP", "CX"];
+
+  const [selectedGroup, setSelectedGroup] = useState(grupos[0]);
+  const [selectedUm, setSelectedUm] = useState(ums[0]);
+
+  const [currentProduct, setCurrentProduct] = useState({
+    codigo,
+    codigoCliente: "",
+    descricao: "",
+    grupo: "SPRI",
+    um: "UN",
+  } as Product);
+
+  useEffect(() => {
+    if (currentProduct.codigo) {
+      const config: AxiosRequestConfig = { headers: { Authorization: `Bearer ${token}` }, params: { limit: 50, offset: 0, ...(codigo ? { codigo } : {}) } };
+      handleGetProduct(config)
+        .then((data) => {
+          setCurrentProduct(data);
+        })
+        .catch(() => {
+          toast.error("Erro ao buscar produto");
+        });
+    }
+  }, [router]);
+
+  useEffect(() => {
+    setSelectedGroup(currentProduct.grupo);
+    setSelectedUm(currentProduct.um);
+  }, [currentProduct]);
 
   const classNames = (...classes: string[]) => {
     return classes.filter(Boolean).join(" ");
   };
-  const [selectedGroup, setSelectedGroup] = useState(grupos[0]);
-  const [selectedUm, setSelectedUm] = useState(ums[0]);
 
-  const validationSchema = yup.object().shape({
-    codigo: yup.string().default(""),
-    codigoCliente: yup.string().required("Código do cliente é obrigatório"),
-    descricao: yup.string().required("Descrição é obrigatória"),
-    pesoBruto: yup.number().required("Peso bruto é obrigatório"),
-    pesoLiquido: yup.number().required("Peso líquido é obrigatório"),
-    grupo: yup.string().default(selectedGroup),
-    um: yup.string().default(selectedUm),
-  });
+  const validationSchema = yup.object().shape(
+    currentProduct.codigo
+      ? {
+          codigo: yup.string().default(currentProduct.codigo),
+          codigoCliente: yup.string().default(currentProduct.codigoCliente),
+          descricao: yup.string().default(currentProduct.descricao),
+          pesoBruto: yup.number().default(currentProduct.pesoBruto),
+          pesoLiquido: yup.number().default(currentProduct.pesoLiquido),
+          grupo: yup.string().default(selectedGroup),
+          um: yup.string().default(selectedUm),
+        }
+      : {
+          codigo: yup.string().default(path.get("codigo") || ""),
+          codigoCliente: yup.string().required("Código do cliente é obrigatório"),
+          descricao: yup.string().required("Descrição é obrigatória"),
+          pesoBruto: yup.number().required("Peso bruto é obrigatório"),
+          pesoLiquido: yup.number().required("Peso líquido é obrigatório"),
+          grupo: yup.string().default(selectedGroup),
+          um: yup.string().default(selectedUm),
+        }
+  );
 
   const { handleSubmit, register } = useForm({
     resolver: yupResolver(validationSchema),
   });
 
-  const { token, logout } = useAuth();
-  const { handleSaveProduct } = useProducts();
-
   const handleOnSubmit = async (productSaveData: ProductSaveData) => {
     try {
       const data: ProductSaveData = { ...productSaveData, grupo: selectedGroup, um: selectedUm };
-      const config: AxiosRequestConfig = { headers: { Authorization: `Bearer ${token}` } };
+      const config: AxiosRequestConfig = { headers: { Authorization: `Bearer ${token}` }, ...(codigo ? { params: { codigo: codigo } } : {}) };
+
       await handleSaveProduct(data, config);
     } catch (error) {
       toast.error("Erro ao cadastrar produto");
@@ -124,44 +167,44 @@ export default function ProductSave({ codigo }: { codigo: string }) {
         )}
       </Disclosure>
       <div className="text-2xl font-bold text-center pt-10">
-        <h2>{codigo ? "Atualizar produto: " + codigo : "Cadastrar produto"}</h2>
+        <h2>{currentProduct.codigo ? "Atualizar produto: " + currentProduct.codigo : "Cadastrar produto"}</h2>
       </div>
 
       <form className="w-full mt-10 flex flex-col justify-center items-center" method="POST" action={"#"} onSubmit={handleSubmit(handleOnSubmit)}>
         <input
           id="codigoCliente"
           type="text"
-          autoComplete="codigoCliente"
-          required
           className="block w-1/4 rounded-md border-0 py-1.5 ps-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 mb-4"
           placeholder="Código do cliente"
+          defaultValue={currentProduct.codigoCliente}
+          disabled={loading}
           {...register("codigoCliente")}
         />
         <input
           id="descricao"
           type="text"
-          autoComplete="descricao"
-          required
           className="block w-1/4 rounded-md border-0 py-1.5 ps-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 mb-4"
           placeholder="Descrição"
+          defaultValue={currentProduct.descricao}
+          disabled={loading}
           {...register("descricao")}
         />
         <input
           id="pesoBruto"
           type="number"
-          autoComplete="pesoBruto"
-          required
           className="block w-1/4 rounded-md border-0 py-1.5 ps-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 mb-4"
           placeholder="Peso bruto"
+          defaultValue={currentProduct.pesoBruto}
+          disabled={loading}
           {...register("pesoBruto")}
         />
         <input
           id="pesoLiquido"
           type="number"
-          autoComplete="pesoLiquido"
-          required
           className="block w-1/4 rounded-md border-0 py-1.5 ps-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 mb-4"
           placeholder="Peso liquido"
+          defaultValue={currentProduct.pesoLiquido}
+          disabled={loading}
           {...register("pesoLiquido")}
         />
         <Listbox value={selectedGroup} onChange={setSelectedGroup}>
@@ -179,7 +222,7 @@ export default function ProductSave({ codigo }: { codigo: string }) {
                 </Listbox.Button>
 
                 <Transition show={open} as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                  <Listbox.Options className="absolute z-10 mt-1 max-h-56 w-1/4 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                  <Listbox.Options className="w-full absolute z-10 mt-1 max-h-56 w-1/4 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
                     {grupos.map((grupo) => (
                       <Listbox.Option
                         key={grupo}
@@ -224,7 +267,7 @@ export default function ProductSave({ codigo }: { codigo: string }) {
                 </Listbox.Button>
 
                 <Transition show={open} as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-                  <Listbox.Options className="absolute z-10 mt-1 max-h-56 w-1/4 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                  <Listbox.Options className="w-full absolute z-10 mt-1 max-h-56 w-1/4 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
                     {ums.map((um) => (
                       <Listbox.Option
                         key={um}
