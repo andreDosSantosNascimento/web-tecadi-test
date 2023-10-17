@@ -34,7 +34,7 @@ export const ProductHook = ({ children }: HookChildrenProp) => {
         try {
           await api.put("/tecadi/treinamento/produto", data, config);
         } catch (error) {
-          const { response, message } = error as AxiosError;
+          const { response } = error as AxiosError;
           if (response && response.status === 400) {
             toast.error(response.data as String);
           }
