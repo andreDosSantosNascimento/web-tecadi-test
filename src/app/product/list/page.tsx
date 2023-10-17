@@ -1,90 +1,51 @@
 "use client";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Disclosure, Menu, Transition } from "@headlessui/react";
+import { ToastContainer, toast } from "react-toastify";
+import { yupResolver } from "@hookform/resolvers/yup";
+import "react-toastify/dist/ReactToastify.css";
+import { ListProductsSearchParams, Product } from "@/app/types/product";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Fragment } from "react";
-import { Disclosure, Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { api } from "@/utils/api";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
+import { Fragment } from "react";
+import { api } from "@/utils/api";
 import * as yup from "yup";
-
-interface Produto {
-  codigo: string;
-  codigoCliente: string;
-  descricao: string;
-  pesoBruto: string;
-  pesoLiquido: string;
-  grupo: string;
-  um: string;
-}
+import { AxiosRequestConfig } from "axios";
+import { useAuth } from "@/app/hooks/auth";
+import { useProducts } from "@/app/hooks/product";
+import { useLoading } from "@/app/hooks/loading";
 
 export default function ProductList() {
   const router = useRouter();
-  const [offset, setOffset] = useState<number>(0);
-  const [limit, setlimit] = useState<number>(50);
-  const [codigo, setCodigo] = useState<string>("");
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [token, setToken] = useState<String>(localStorage.getItem("token") || "");
+  const [searchParams, setSearchParams] = useState({ limit: 50, offset: 0, codigo: "" } as ListProductsSearchParams);
+  const { products, handleListProduct } = useProducts();
+  const { token, logout } = useAuth();
+  const { loading, setLoading } = useLoading();
 
-  const handleGetProducts = () => {
-    api
-      .get("/tecadi/treinamento/produto", { headers: { Authorization: `Bearer ${token}` }, params: { offset, limit, codigo } })
-      .then(({ data }) => {
-        setProdutos(data.list);
-      })
-      .catch((error) => {
-        console.log(error);
-        toast.error("Erro ao buscar produtos");
-      });
-  };
   const validationSchema = yup.object().shape({
     offset: yup.number().required("Offset é obrigatório"),
     limit: yup.number().required("Limite é obrigatório"),
-    codigo: yup.string(),
+    codigo: yup.string().default(""),
   });
 
   const { handleSubmit, register } = useForm({
     resolver: yupResolver(validationSchema),
   });
 
-  const handleOnSubmit = async ({ codigo = "", offset, limit }: { codigo?: string | undefined; offset: number; limit: number }) => {
-    try {
-      setCodigo(codigo);
-      setOffset(offset);
-      setlimit(limit);
-    } catch (error) {
-      toast.error("Erro ao Buscar produtos");
-    }
+  const listProducts = () => {
+    setLoading(true);
+    const config: AxiosRequestConfig = { headers: { Authorization: `Bearer ${token}` }, params: searchParams };
+    handleListProduct(config);
   };
-  useEffect(() => {
-    handleGetProducts();
-  }, [codigo, offset, limit]);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token") || "";
-    if (!token) {
-      router.push("/sign-in");
-    }
-    setToken(token);
-  }, [router]);
-
-  useEffect(() => {
-    if (token) {
-      handleGetProducts();
-    }
-  }, [token]);
+  const handleOnSubmit = async (listProductsSearchParams: ListProductsSearchParams) => {
+    setSearchParams(listProductsSearchParams);
+  };
 
   const classNames = (...classes: string[]) => classes.filter(Boolean).join(" ");
-  const logout = () => {
-    localStorage.clear();
-    setToken("");
-    router.push("/sign-in");
-  };
 
-  const handleDeleteProduct = async (codigo: string) => {
+  const deleteProduct = async (codigo: string) => {
     await api.delete("/tecadi/treinamento/produto", {
       params: {
         codigo,
@@ -93,9 +54,24 @@ export default function ProductList() {
         Authorization: `Bearer ${token}`,
       },
     });
-    handleGetProducts();
+    setSearchParams(searchParams);
   };
 
+  useEffect(() => {
+    if (!token) {
+      router.push("/sign-in");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!loading) {
+      listProducts();
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    setLoading(false);
+  }, [products]);
   return (
     <>
       <ToastContainer />
@@ -118,7 +94,7 @@ export default function ProductList() {
                       autoComplete="codigo-produto"
                       className="flex w-1/4 me-2 h-10 rounded-md border-0 bg-white/5 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6"
                       placeholder="Código do produto"
-                      defaultValue={codigo}
+                      defaultValue={searchParams.codigo}
                       {...register("codigo")}
                     />
                     <input
@@ -128,7 +104,7 @@ export default function ProductList() {
                       required
                       className="flex w-2/12 me-2 h-10 rounded-md border-0 bg-white/5 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6"
                       placeholder="Offset"
-                      defaultValue={offset}
+                      defaultValue={searchParams.offset}
                       {...register("offset")}
                     />
                     <input
@@ -138,22 +114,42 @@ export default function ProductList() {
                       required
                       className="flex w-2/12 me-2 h-10 rounded-md border-0 bg-white/5 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6"
                       placeholder="Limite"
-                      defaultValue={limit}
+                      defaultValue={searchParams.limit}
                       {...register("limit")}
                     />
-                    <button
-                      type="submit"
-                      className="flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-                    >
-                      Filtrar
-                    </button>
-                    <button
-                      type="button"
-                      className="flex-none ms-2 rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-                      onClick={() => router.push("/product/register")}
-                    >
-                      Novo produto
-                    </button>
+                    {loading ? (
+                      <button
+                        type="button"
+                        className={`flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 cursor-wait`}
+                        disabled
+                      >
+                        Filtrar
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className={`flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500`}
+                      >
+                        Filtrar
+                      </button>
+                    )}
+                    {loading ? (
+                      <button
+                        type="button"
+                        className="flex-none ms-2 rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 cursor-wait"
+                        disabled
+                      >
+                        Novo produto
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="flex-none ms-2 rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                        onClick={() => router.push("/product/register")}
+                      >
+                        Novo produto
+                      </button>
+                    )}
                   </form>
                 </div>
 
@@ -190,14 +186,7 @@ export default function ProductList() {
                       <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                         <Menu.Item>
                           {({ active }) => (
-                            <a
-                              href="#"
-                              className={classNames(active ? "bg-gray-100" : "", "block px-4 py-2 text-sm text-gray-700")}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                logout();
-                              }}
-                            >
+                            <a href="#" className={classNames(active ? "bg-gray-100" : "", "block px-4 py-2 text-sm text-gray-700")} onClick={logout}>
                               Sair
                             </a>
                           )}
@@ -227,7 +216,7 @@ export default function ProductList() {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {produtos.map((item, index) => (
+          {products.map((item, index) => (
             <tr key={index}>
               <td className="px-6 py-4 whitespace-no-wrap">
                 <div className="text-sm leading-5 text-gray-900">{item.codigo}</div>
@@ -265,7 +254,7 @@ export default function ProductList() {
                   <button
                     type="button"
                     className="flex-none rounded-md bg-red-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
-                    onClick={() => handleDeleteProduct(item.codigo)}
+                    onClick={() => deleteProduct(item.codigo)}
                   >
                     Excluir
                   </button>

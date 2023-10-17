@@ -1,12 +1,12 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { MouseEvent, createContext, useContext, useEffect, useState } from "react";
 import { AuthHookProps, LoginParams } from "../types/auth";
 import { HookChildrenProp } from "../types/children";
 import { api } from "@/utils/api";
 
 const AuthContext = createContext({} as AuthHookProps);
 
-export const AuthProvider = ({ children }: HookChildrenProp) => {
+export const AuthHook = ({ children }: HookChildrenProp) => {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
 
   useEffect(() => {
@@ -23,7 +23,8 @@ export const AuthProvider = ({ children }: HookChildrenProp) => {
       setToken(data.access_token);
     }
   };
-  const logout = () => {
+  const logout = (e: MouseEvent) => {
+    e.preventDefault();
     setToken("");
   };
 
