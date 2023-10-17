@@ -10,7 +10,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { api } from "@/utils/api";
 import { toast } from "react-toastify";
 
-export default function newProduct() {
+export default function ProductRegister() {
   const router = useRouter();
 
   const grupos = ["SPRI", "RITR", "MINE", "SOVE", "SUMI"];

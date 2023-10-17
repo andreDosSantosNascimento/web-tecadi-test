@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+
 interface Produto {
   codigo: string;
   codigoCliente: string;
@@ -20,7 +21,7 @@ interface Produto {
   um: string;
 }
 
-export default function Home() {
+export default function ProductList() {
   const router = useRouter();
   const [offset, setOffset] = useState<number>(0);
   const [limit, setlimit] = useState<number>(50);
@@ -30,7 +31,7 @@ export default function Home() {
 
   const handleGetProducts = () => {
     api
-      .get("product", { headers: { Authorization: `Bearer ${token}` }, params: { offset, limit, codigo } })
+      .get("/tecadi/treinamento/produto", { headers: { Authorization: `Bearer ${token}` }, params: { offset, limit, codigo } })
       .then(({ data }) => {
         setProdutos(data.list);
       })
@@ -84,7 +85,7 @@ export default function Home() {
   };
 
   const handleDeleteProduct = async (codigo: string) => {
-    await api.delete("/product", {
+    await api.delete("/tecadi/treinamento/produto", {
       params: {
         codigo,
       },
@@ -110,13 +111,6 @@ export default function Home() {
                   </Disclosure.Button>
                 </div>
                 <div className="flex content-center items-center">
-                  <button
-                    type="button"
-                    className="flex-none rounded-md me-2 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-                    onClick={() => router.push("/new-product")}
-                  >
-                    Novo produto
-                  </button>
                   <form className="flex" action="#" method="POST" onSubmit={handleSubmit(handleOnSubmit)}>
                     <input
                       id="codigo-produto"
@@ -151,7 +145,14 @@ export default function Home() {
                       type="submit"
                       className="flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                     >
-                      Procurar
+                      Filtrar
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-none ms-2 rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                      onClick={() => router.push("/product/register")}
+                    >
+                      Novo produto
                     </button>
                   </form>
                 </div>
