@@ -22,6 +22,17 @@ export default function ProductList() {
   const { products, handleListProduct } = useProducts();
   const { token, logout } = useAuth();
   const { loading } = useLoading();
+  const headers = [
+    "Código do produto",
+    "Código do cliente",
+    "Descrição",
+    "Grupo",
+    "Peso bruto",
+    "Peso líquido",
+    "Unidade de medida",
+    "saldo",
+    "Editar/Excluir",
+  ];
 
   const validationSchema = yup.object().shape({
     offset: yup.number().required("Offset é obrigatório"),
@@ -204,15 +215,9 @@ export default function ProductList() {
       <table className="min-w-full divide-y divide-gray-200">
         <thead>
           <tr>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Código do produto</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Código do cliente</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Grupo</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Peso bruto</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Peso líquido</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Unidade de medida</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Editar</th>
-            <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Excluir</th>
+            {headers.map((header) => {
+              return <th className="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">{header}</th>;
+            })}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -240,18 +245,17 @@ export default function ProductList() {
                 <span className="px-2 inline-flex text-xs leading-5">{item.um}</span>
               </td>
               <td className="px-6 py-4 whitespace-no-wrap">
+                <span className="px-2 inline-flex text-xs leading-5">{item.saldo}</span>
+              </td>
+              <td className="px-6 py-4 whitespace-no-wrap">
                 <span className="px-2 inline-flex text-xs leading-5">
                   <button
                     type="submit"
-                    className="flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                    className="me-2 flex-none rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                     onClick={() => router.push(`/product/save?codigo=${item.codigo}`)}
                   >
                     Editar
                   </button>
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-no-wrap">
-                <span className="px-2 inline-flex text-xs leading-5">
                   <button
                     type="button"
                     className="flex-none rounded-md bg-red-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"

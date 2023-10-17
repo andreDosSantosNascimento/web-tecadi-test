@@ -9,6 +9,7 @@ export interface Product {
   pesoLiquido: number;
   grupo: string;
   um: string;
+  saldo: number;
 }
 export interface ProductHookProps {
   handleListProduct: (listProductsParams: AxiosRequestConfig) => void;
