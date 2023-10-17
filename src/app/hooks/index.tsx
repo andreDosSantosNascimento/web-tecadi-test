@@ -6,10 +6,10 @@ import { AuthHook } from "./auth";
 
 export function Hooks({ children }: HookChildrenProp) {
   return (
-    <ProductHook>
-      <LoadingHook>
-        <AuthHook>{children}</AuthHook>
-      </LoadingHook>
-    </ProductHook>
+    <LoadingHook>
+      <AuthHook>
+        <ProductHook>{children}</ProductHook>
+      </AuthHook>
+    </LoadingHook>
   );
 }

@@ -21,7 +21,7 @@ export default function ProductList() {
   const [searchParams, setSearchParams] = useState({ limit: 50, offset: 0, codigo: "" } as ListProductsSearchParams);
   const { products, handleListProduct } = useProducts();
   const { token, logout } = useAuth();
-  const { loading, setLoading } = useLoading();
+  const { loading } = useLoading();
 
   const validationSchema = yup.object().shape({
     offset: yup.number().required("Offset é obrigatório"),
@@ -33,10 +33,9 @@ export default function ProductList() {
     resolver: yupResolver(validationSchema),
   });
 
-  const listProducts = () => {
-    setLoading(true);
+  const listProducts = async () => {
     const config: AxiosRequestConfig = { headers: { Authorization: `Bearer ${token}` }, params: searchParams };
-    handleListProduct(config);
+    await handleListProduct(config);
   };
 
   const handleOnSubmit = async (listProductsSearchParams: ListProductsSearchParams) => {
@@ -46,15 +45,19 @@ export default function ProductList() {
   const classNames = (...classes: string[]) => classes.filter(Boolean).join(" ");
 
   const deleteProduct = async (codigo: string) => {
-    await api.delete("/tecadi/treinamento/produto", {
-      params: {
-        codigo,
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    setSearchParams(searchParams);
+    try {
+      await api.delete("/tecadi/treinamento/produto", {
+        params: {
+          codigo,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      toast.error("Produto não existe");
+    }
+    await listProducts();
   };
 
   useEffect(() => {
@@ -69,9 +72,6 @@ export default function ProductList() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    setLoading(false);
-  }, [products]);
   return (
     <>
       <ToastContainer />
@@ -145,7 +145,7 @@ export default function ProductList() {
                       <button
                         type="button"
                         className="flex-none ms-2 rounded-md bg-blue-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-                        onClick={() => router.push("/product/register")}
+                        onClick={() => router.push("/product/save")}
                       >
                         Novo produto
                       </button>

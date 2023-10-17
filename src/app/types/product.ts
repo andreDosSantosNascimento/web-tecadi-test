@@ -12,6 +12,7 @@ export interface Product {
 }
 export interface ProductHookProps {
   handleListProduct: (listProductsParams: AxiosRequestConfig) => void;
+  handleSaveProduct: (data: ProductSaveData, config: AxiosRequestConfig) => void;
   setProducts: Dispatch<SetStateAction<Product[]>>;
   products: Product[];
 }
@@ -27,4 +28,14 @@ export interface ListProductsSearchParams {
   codigo?: string | undefined;
   offset: number;
   limit: number;
+}
+
+export interface ProductSaveData {
+  codigo: string;
+  codigoCliente: string;
+  descricao: string;
+  pesoBruto: number;
+  pesoLiquido: number;
+  grupo: string;
+  um: string;
 }
